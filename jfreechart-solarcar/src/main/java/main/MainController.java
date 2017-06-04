@@ -3,24 +3,21 @@ package main;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
+import javafx.scene.Scene;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
-import org.jfree.chart.ChartPanel;
+import javafx.stage.Stage;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.block.BlockBorder;
 import org.jfree.chart.entity.AxisEntity;
-import org.jfree.chart.fx.ChartCanvas;
 import org.jfree.chart.fx.ChartViewer;
 import org.jfree.chart.fx.interaction.ChartMouseEventFX;
 import org.jfree.chart.fx.interaction.ChartMouseListenerFX;
-import org.jfree.chart.fx.interaction.MouseHandlerFX;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.SamplingXYLineRenderer;
 import org.jfree.chart.ui.HorizontalAlignment;
@@ -30,6 +27,7 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
 
 import java.awt.*;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Date;
 import java.util.ResourceBundle;
@@ -42,20 +40,10 @@ import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
     static final String fontName = "Palatino";
-
     private boolean run = true;
 
     @FXML
     BorderPane rootPane;
-
-    //    @FXML
-//    private ScrollBar chartScrollBar;
-//
-//    @FXML
-//    private Slider zoomSlider;
-//
-//    @FXML
-//    private Button liveButton;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -76,8 +64,30 @@ public class MainController implements Initializable {
             @Override
             public void chartMouseClicked(ChartMouseEventFX event) {
                 if (event.getTrigger().getButton() == MouseButton.SECONDARY) {
-                    AxisEntity axisEntity = (AxisEntity) event.getEntity();
-                    System.out.println(axisEntity.getAxis().getLabel());
+
+                    if (event.getEntity() instanceof  AxisEntity) {
+                        AxisEntity axisEntity = (AxisEntity) event.getEntity();
+
+                        if (axisEntity.getAxis() instanceof NumberAxis) {
+                            NumberAxis axis = (NumberAxis) axisEntity.getAxis();
+                            try {
+                                FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("YAxisPopupView.fxml"));
+                                BorderPane rootPane = loader.load();
+
+                                YAxisPopupController controller = (YAxisPopupController) loader.<YAxisPopupController>getController();
+                                controller.setAxis(axis);
+
+                                Stage st = new Stage();
+                                Scene scene = new Scene(rootPane);
+                                st.setScene(scene);
+                                st.setTitle(axis.getLabel());
+                                st.setResizable(false);
+                                st.show();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
                 }
             }
 
@@ -87,6 +97,7 @@ public class MainController implements Initializable {
             }
         });
 
+//        viewer.setPrefSize(rootPane.getPrefWidth(), rootPane.getPrefHeight());
         // we need to set the size, to auto-resize the CartViewer when the rootPane is resized
         rootPane.setPrefSize(viewer.getPrefWidth(), viewer.getPrefHeight());
         rootPane.setCenter(viewer);
@@ -103,7 +114,7 @@ public class MainController implements Initializable {
 
                         @Override
                         public void run() {
-                            boolean notify = counter % 25 == 0;
+                            boolean notify = counter % 5 == 0;
 
                             Date date = new Date();
                             Millisecond millisecond = new Millisecond(date);
@@ -127,7 +138,7 @@ public class MainController implements Initializable {
                     });
 
                     try {
-                        Thread.sleep(20);
+                        Thread.sleep(200);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -162,12 +173,12 @@ public class MainController implements Initializable {
 
     private static JFreeChart createChart(XYDataset ds1, XYDataset ds2) {
         // X-Axis
-        ValueAxis xAxis = new DateAxis("Test");
+        final ValueAxis xAxis = new DateAxis("Test");
         xAxis.setLowerMargin(0.02); // reduce the default margins
         xAxis.setUpperMargin(0.02);
 
         // 1st Y-Axis
-        NumberAxis yAxis1 = new NumberAxis("Test");
+        final NumberAxis yAxis1 = new NumberAxis("Test");
         yAxis1.setAutoRangeIncludesZero(false); // override default
         yAxis1.setLowerMargin(0.0);
         yAxis1.setLabelFont(new Font(fontName, Font.BOLD, 14));
@@ -222,6 +233,5 @@ public class MainController implements Initializable {
         chart.getLegend().setHorizontalAlignment(HorizontalAlignment.CENTER);
 
         return chart;
-
     }
 }
