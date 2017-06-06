@@ -42,6 +42,10 @@ public class LegendItemPopupController implements Initializable {
                 (float) fx.getBlue(),
                 (float) fx.getOpacity());
 
-        plot.getRendererForDataset((XYDataset) legendItemEntity.getDataset()).setSeriesPaint(0, color);
+        XYDataset dataset = (XYDataset)legendItemEntity.getDataset();
+
+        int seriesIndex = dataset.indexOf(legendItemEntity.getSeriesKey());
+
+        plot.getRendererForDataset(dataset).setSeriesPaint(seriesIndex, color);
     }
 }

@@ -52,15 +52,20 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        final TimeSeriesCollection ds1 = createDataset();
-        final TimeSeriesCollection ds2 = createDataset2();
-
-        TimeSeries s1 = (TimeSeries) ds1.getSeries().get(0);
-        TimeSeries s2 = (TimeSeries) ds2.getSeries().get(0);
+        TimeSeries s1 = new TimeSeries("Voltage");
         s1.setMaximumItemAge(10000);
+
+        TimeSeries s2 = new TimeSeries("Speed");
         s2.setMaximumItemAge(10000);
 
-        JFreeChart chart = createChart(ds1, ds2);
+        TimeSeriesCollection tsc1 = new TimeSeriesCollection();
+        tsc1.addSeries(s1);
+        tsc1.addSeries(s2);
+
+        TimeSeriesCollection tsc2 = new TimeSeriesCollection();
+        tsc2.addSeries(s2);
+
+        JFreeChart chart = createChart(tsc1, tsc2);
 
         ChartViewer viewer = new ChartViewer(chart);
         viewer.setOnContextMenuRequested(null);
@@ -103,8 +108,8 @@ public class MainController implements Initializable {
             protected Void call() throws Exception {
                 while (run) {
                     Platform.runLater(new Runnable() {
-                        TimeSeries s1 = (TimeSeries) ds1.getSeries().get(0);
-                        TimeSeries s2 = (TimeSeries) ds2.getSeries().get(0);
+                        TimeSeries s1 = (TimeSeries) tsc1.getSeries().get(0);
+                        TimeSeries s2 = (TimeSeries) tsc1.getSeries().get(1);
 
                         @Override
                         public void run() {
@@ -113,16 +118,7 @@ public class MainController implements Initializable {
                             Date date = new Date();
                             Millisecond millisecond = new Millisecond(date);
 
-//                            Date lol = Date.from(LocalDateTime.from(date.toInstant()).plusDays(1).toInstant(ZoneId.systemDefault().getId()));
-
                             double value = 70.0 + Math.random() * 5.0;
-
-//                            if (notify) {
-//                                Millisecond offset = new Millisecond(lol);
-//                                System.out.println(offset);
-//                                s1.add(offset, 1);
-//                                s2.add(offset, 1);
-//                            }
 
                             s1.add(millisecond, value, false);
                             s2.add(millisecond, 150 + Math.random() * 3.0, notify);
@@ -213,24 +209,6 @@ public class MainController implements Initializable {
         }
     }
 
-    private static TimeSeriesCollection createDataset() {
-        TimeSeries s1 = new TimeSeries("Voltage");
-
-        TimeSeriesCollection timeSeriesCollection = new TimeSeriesCollection();
-        timeSeriesCollection.addSeries(s1);
-
-        return timeSeriesCollection;
-    }
-
-    private static TimeSeriesCollection createDataset2() {
-        TimeSeries s2 = new TimeSeries("Speed");
-
-        TimeSeriesCollection timeSeriesCollection = new TimeSeriesCollection();
-        timeSeriesCollection.addSeries(s2);
-
-        return timeSeriesCollection;
-    }
-
     private static JFreeChart createChart(XYDataset ds1, XYDataset ds2) {
         // X-Axis
         final ValueAxis xAxis = new DateAxis("Test");
@@ -274,7 +252,10 @@ public class MainController implements Initializable {
             @Override
             public LegendItem getLegendItem(int datasetIndex, int series) {
                 LegendItem legend = super.getLegendItem(datasetIndex, series);
-                LegendItem newLegend = new LegendItem(legend.getLabel(), legend.getDescription(), legend.getToolTipText(), legend.getURLText(), Plot.DEFAULT_LEGEND_ITEM_BOX, legend.getFillPaint());
+                LegendItem newLegend = new LegendItem(legend.getLabel(),
+                        legend.getDescription(),
+                        legend.getToolTipText(),
+                        legend.getURLText(), Plot.DEFAULT_LEGEND_ITEM_BOX, legend.getFillPaint());
                 newLegend.setSeriesKey(legend.getSeriesKey());
                 newLegend.setDataset(legend.getDataset());
                 return newLegend;
@@ -306,7 +287,6 @@ public class MainController implements Initializable {
                 return newLegend;
             }
         };
-
 
         renderer2.setDefaultToolTipGenerator(null);
         renderer2.setURLGenerator(null);
