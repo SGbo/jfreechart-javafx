@@ -6,9 +6,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import jfreechart.SlidingXYDataset;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.LegendItem;
 import org.jfree.chart.axis.Axis;
@@ -33,6 +35,7 @@ import org.jfree.data.xy.XYDataset;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.ResourceBundle;
 
@@ -43,20 +46,23 @@ import java.util.ResourceBundle;
 //TODO - Scroll
 
 public class MainController implements Initializable {
-    static final String fontName = "Palatino";
+    final String fontName = "Palatino";
     private boolean run = true;
     private static XYPlot plot;
+    private DateAxis xAxis;
 
     @FXML
     private BorderPane rootPane;
+    @FXML
+    private ScrollBar xScrollBar;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         TimeSeries s1 = new TimeSeries("Voltage");
-        s1.setMaximumItemAge(10000);
+//        s1.setMaximumItemAge(10000);
 
         TimeSeries s2 = new TimeSeries("Speed");
-        s2.setMaximumItemAge(10000);
+//        s2.setMaximumItemAge(10000);
 
         TimeSeriesCollection tsc1 = new TimeSeriesCollection();
         tsc1.addSeries(s1);
@@ -64,6 +70,16 @@ public class MainController implements Initializable {
 
         TimeSeriesCollection tsc2 = new TimeSeriesCollection();
         tsc2.addSeries(s2);
+
+        xScrollBar.setMin(new Date().getTime());
+        xScrollBar.valueProperty().addListener(ae -> {
+                    onXScrollBarMoved();
+                }
+        );
+//        Date date = new Date();
+//        int time = (int)date.toInstant().getEpochSecond();
+//        SlidingXYDataset sds1 = new SlidingXYDataset(tsc1, time, time + 10);
+//        SlidingXYDataset sds2 = new SlidingXYDataset(tsc2, time, time + 10);
 
         JFreeChart chart = createChart(tsc1, tsc2);
 
@@ -116,12 +132,21 @@ public class MainController implements Initializable {
                             boolean notify = counter % 5 == 0;
 
                             Date date = new Date();
+
+                            xScrollBar.setMax(date.getTime());
+
                             Millisecond millisecond = new Millisecond(date);
+
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(date);
+                            cal.add(Calendar.SECOND, -10);
+//                            xAxis.setRange(cal.getTime(), date);
 
                             double value = 70.0 + Math.random() * 5.0;
 
                             s1.add(millisecond, value, false);
                             s2.add(millisecond, 150 + Math.random() * 3.0, notify);
+
 
                             counter++;
                         }
@@ -141,6 +166,12 @@ public class MainController implements Initializable {
         Thread th = new Thread(task);
         th.setDaemon(true);
         th.start();
+    }
+
+    @FXML
+    void onXScrollBarMoved() {
+        System.out.println("onXScrollBarMoved");
+        xAxis.setRange(xScrollBar.getValue(), xScrollBar.getValue() + 10000);
     }
 
     private void onXAxisClicked(Axis xAxis) {
@@ -209,11 +240,11 @@ public class MainController implements Initializable {
         }
     }
 
-    private static JFreeChart createChart(XYDataset ds1, XYDataset ds2) {
+    private JFreeChart createChart(XYDataset ds1, XYDataset ds2) {
         // X-Axis
-        final ValueAxis xAxis = new DateAxis("Test");
-//        xAxis.setLowerMargin(0.02); // reduce the default margins
-//        xAxis.setUpperMargin(0.02);
+        xAxis = new DateAxis("Test");
+        xAxis.setLowerMargin(0.01); // reduce the default margins
+        xAxis.setUpperMargin(0.01);
 
         // 1st Y-Axis
         final NumberAxis yAxis1 = new NumberAxis("Voltage");
@@ -234,15 +265,15 @@ public class MainController implements Initializable {
         yAxis3.setTickLabelFont(new Font(fontName, Font.PLAIN, 12));
 
         plot = new XYPlot() {
-            @Override
-            public boolean isDomainZoomable() {
-                return false;
-            }
-
-            @Override
-            public boolean isRangeZoomable() {
-                return false;
-            }
+//            @Override
+//            public boolean isDomainZoomable() {
+//                return false;
+//            }
+//
+//            @Override
+//            public boolean isRangeZoomable() {
+//                return false;
+//            }
         };
         plot.setDomainAxis(xAxis);
         plot.setRangeAxis(yAxis1);
