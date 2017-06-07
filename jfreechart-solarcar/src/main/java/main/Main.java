@@ -9,13 +9,14 @@ import javafx.stage.Stage;
 import java.awt.*;
 
 public class Main extends Application {
-
 	@Override
 	public void start(Stage stage) throws Exception {
 		for (int i = 0; i < 1; i++) {
 			FXMLLoader loader = new FXMLLoader();
-			BorderPane rootPane = loader.load(getClass().getClassLoader().getResource("MainView.fxml"));
+			loader.setLocation(getClass().getResource("../comps/linechart/LineChartView.fxml"));
+			BorderPane rootPane = loader.load();
 
+			// get screen size
 			GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 			int width = gd.getDisplayMode().getWidth();
 			int height = gd.getDisplayMode().getHeight();

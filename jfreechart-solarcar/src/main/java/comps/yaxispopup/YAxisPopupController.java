@@ -1,28 +1,27 @@
-package main;
+package comps.yaxispopup;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
-import org.jfree.chart.axis.Axis;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.ValueAxis;
-import org.jfree.data.Range;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class YAxisPopupController implements Initializable {
     @FXML
-    private CheckBox reverseDirectionCheckBox;
+    private TextField nameEdit;
     @FXML
     private CheckBox autoRangeCheckBox;
     @FXML
     private TextField lowerBoundEdit;
     @FXML
     private TextField upperBoundEdit;
+    @FXML
+    private CheckBox reverseDirectionCheckBox;
 
-    NumberAxis axis;
+    private NumberAxis axis;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -34,7 +33,7 @@ public class YAxisPopupController implements Initializable {
         });
     }
 
-    void updateRange() {
+    private void updateRange() {
         if (axis.isAutoRange()) {
             return;
         }
@@ -58,6 +57,11 @@ public class YAxisPopupController implements Initializable {
             lowerBoundEdit.setStyle(errStyle);
             upperBoundEdit.setStyle(errStyle);
         }
+    }
+
+    @FXML
+    private void onNameChanged() {
+        axis.setLabel(nameEdit.getText());
     }
 
     @FXML
@@ -88,12 +92,13 @@ public class YAxisPopupController implements Initializable {
         }
     }
 
-    public void setAxis(NumberAxis axis) {
+    public void initController(NumberAxis axis) {
         this.axis = axis;
         reverseDirectionCheckBox.setSelected(axis.isInverted());
         lowerBoundEdit.setText(String.valueOf(axis.getLowerBound()));
         upperBoundEdit.setText(String.valueOf(axis.getUpperBound()));
         autoRangeCheckBox.setSelected(axis.isAutoRange());
+        nameEdit.setText(axis.getLabel());
         updateRange();
     }
 }

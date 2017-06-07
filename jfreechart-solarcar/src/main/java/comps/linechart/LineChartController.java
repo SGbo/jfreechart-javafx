@@ -1,5 +1,8 @@
-package main;
+package comps.linechart;
 
+import comps.legenditempopup.LegendItemPopupController;
+import comps.xaxispopup.XAxisPopupController;
+import comps.yaxispopup.YAxisPopupController;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -9,14 +12,14 @@ import javafx.scene.Scene;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
-import jfreechart.SlidingXYDataset;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.LegendItem;
 import org.jfree.chart.axis.Axis;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.block.BlockBorder;
 import org.jfree.chart.entity.AxisEntity;
 import org.jfree.chart.entity.LegendItemEntity;
@@ -39,16 +42,24 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.ResourceBundle;
 
-//TODO Farben
-//TODO Mehrere Axen
-//TODO SlidingXYDataSet
-//TODO - Zoom nur jeden x-ten Wert anzeigen
-//TODO - Scroll
+/**
+ * !
+ * TODO
+ * [x]Farben
+ * [x]Mehrere Axen
+ * [ ]Beim Zoom nur jeden x-ten Wert anzeigen
+ * [x]Scroll
+ * [ ]ComboBox für Zeitfenster (X-Achse) mit voreingestellten Werten + editierbar
+ * [ ]Hinzufügen von DataSeries
+ * <p>
+ * WICHTIG
+ * - Im Linux Lockscreen bleibt die Kennlinie hängen!!
+ */
 
-public class MainController implements Initializable {
-    final String fontName = "Palatino";
+public class LineChartController implements Initializable {
+    private static final String FONT_NAME = "Palatino";
     private boolean run = true;
-    private static XYPlot plot;
+    private XYPlot plot;
     private DateAxis xAxis;
 
     @FXML
@@ -59,11 +70,7 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         TimeSeries s1 = new TimeSeries("Voltage");
-//        s1.setMaximumItemAge(10000);
-
         TimeSeries s2 = new TimeSeries("Speed");
-//        s2.setMaximumItemAge(10000);
-
         TimeSeriesCollection tsc1 = new TimeSeriesCollection();
         tsc1.addSeries(s1);
         tsc1.addSeries(s2);
@@ -72,14 +79,9 @@ public class MainController implements Initializable {
         tsc2.addSeries(s2);
 
         xScrollBar.setMin(new Date().getTime());
-        xScrollBar.valueProperty().addListener(ae -> {
-                    onXScrollBarMoved();
-                }
+        xScrollBar.valueProperty().addListener(ae ->
+                onXScrollBarMoved()
         );
-//        Date date = new Date();
-//        int time = (int)date.toInstant().getEpochSecond();
-//        SlidingXYDataset sds1 = new SlidingXYDataset(tsc1, time, time + 10);
-//        SlidingXYDataset sds2 = new SlidingXYDataset(tsc2, time, time + 10);
 
         JFreeChart chart = createChart(tsc1, tsc2);
 
@@ -100,7 +102,6 @@ public class MainController implements Initializable {
                         }
                     } else if (event.getEntity() instanceof LegendItemEntity) {
                         LegendItemEntity legendItemEntity = (LegendItemEntity) event.getEntity();
-                        System.out.println("entity: " + (legendItemEntity == null));
                         onLegendItemClicked(legendItemEntity);
                     }
                 }
@@ -108,11 +109,10 @@ public class MainController implements Initializable {
 
             @Override
             public void chartMouseMoved(ChartMouseEventFX event) {
-
+                //empty method comment to hide lint-warning
             }
         });
 
-//        viewer.setPrefSize(rootPane.getPrefWidth(), rootPane.getPrefHeight());
         // we need to set the size, to auto-resize the CartViewer when the rootPane is resized
         rootPane.setPrefSize(viewer.getPrefWidth(), viewer.getPrefHeight());
         rootPane.setCenter(viewer);
@@ -147,7 +147,6 @@ public class MainController implements Initializable {
                             s1.add(millisecond, value, false);
                             s2.add(millisecond, 150 + Math.random() * 3.0, notify);
 
-
                             counter++;
                         }
                     });
@@ -155,6 +154,7 @@ public class MainController implements Initializable {
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         e.printStackTrace();
                     }
                 }
@@ -169,50 +169,56 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    void onXScrollBarMoved() {
-        System.out.println("onXScrollBarMoved");
+    private void onXScrollBarMoved() {
         xAxis.setRange(xScrollBar.getValue(), xScrollBar.getValue() + 10000);
     }
 
     private void onXAxisClicked(Axis xAxis) {
-//        System.out.println("onYAxisClicked");
-//        if (xAxis instanceof DateAxis) {
-//            DateAxis axis = (DateAxis) valueAxis;
-//            try {
-//                FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("XAxisPopupView.fxml"));
-//                BorderPane rootPane = loader.load();
-//
-//                YAxisPopupController controller = (YAxisPopupController) loader.<YAxisPopupController>getController();
-//                controller.setAxis(axis);
-//
-//                Stage st = new Stage();
-//                Scene scene = new Scene(rootPane);
-//                st.setScene(scene);
-//                st.setTitle(axis.getLabel());
-//                st.setResizable(false);
-//                st.show();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
+        if (xAxis instanceof DateAxis) {
+            DateAxis axis = (DateAxis) xAxis;
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("comps/xaxispopup/XAxisPopupView.fxml"));
+                GridPane xAxisPane = loader.load();
+
+//                XAxisPopupController controller = loader.<YAxisPopupController>getController();
+//                controller.initController(axis);
+
+                Stage st = new Stage();
+                Scene scene = new Scene(xAxisPane);
+                st.setScene(scene);
+                st.setTitle(axis.getLabel());
+                st.setResizable(false);
+                st.show();
+
+                Point mouse = MouseInfo.getPointerInfo().getLocation();
+                st.setX(mouse.getX() - st.getWidth() / 2);
+                st.setY(mouse.getY() - st.getHeight() / 2);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void onYAxisClicked(Axis yAxis) {
         if (yAxis instanceof NumberAxis) {
             NumberAxis axis = (NumberAxis) yAxis;
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("YAxisPopupView.fxml"));
-                BorderPane rootPane = loader.load();
+                FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("comps/yaxispopup/YAxisPopupView.fxml"));
+                BorderPane yAxisPane = loader.load();
 
-                YAxisPopupController controller = (YAxisPopupController) loader.<YAxisPopupController>getController();
-                controller.setAxis(axis);
+                YAxisPopupController controller = loader.<YAxisPopupController>getController();
+                controller.initController(axis);
 
                 Stage st = new Stage();
-                Scene scene = new Scene(rootPane);
+                Scene scene = new Scene(yAxisPane);
                 st.setScene(scene);
                 st.setTitle(axis.getLabel());
                 st.setResizable(false);
                 st.show();
+
+                Point mouse = MouseInfo.getPointerInfo().getLocation();
+                st.setX(mouse.getX() - st.getWidth() / 2);
+                st.setY(mouse.getY() - st.getHeight() / 2);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -220,21 +226,23 @@ public class MainController implements Initializable {
     }
 
     private void onLegendItemClicked(LegendItemEntity legendItemEntity) {
-        System.out.println("legend item clicked");
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("LegendItemPopupView.fxml"));
-            BorderPane rootPane = loader.load();
+            FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("comps/legenditempopup/LegendItemPopupView.fxml"));
+            BorderPane legendItemPane = loader.load();
 
             LegendItemPopupController controller = (LegendItemPopupController) loader.<LegendItemPopupController>getController();
-            controller.setPlot(plot);
-            controller.setLegendItemEntity(legendItemEntity);
+            controller.initController(plot, legendItemEntity);
 
             Stage st = new Stage();
-            Scene scene = new Scene(rootPane);
+            Scene scene = new Scene(legendItemPane);
             st.setScene(scene);
             st.setTitle(legendItemEntity.getSeriesKey().toString());
             st.setResizable(false);
+            st.initModality(Modality.APPLICATION_MODAL);
             st.show();
+            Point mouse = MouseInfo.getPointerInfo().getLocation();
+            st.setX(mouse.getX() - st.getWidth() / 2);
+            st.setY(mouse.getY() - st.getHeight() / 2);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -250,30 +258,30 @@ public class MainController implements Initializable {
         final NumberAxis yAxis1 = new NumberAxis("Voltage");
         yAxis1.setAutoRangeIncludesZero(false); // override default
         yAxis1.setLowerMargin(0.0);
-        yAxis1.setLabelFont(new Font(fontName, Font.BOLD, 14));
-        yAxis1.setTickLabelFont(new Font(fontName, Font.PLAIN, 12));
+        yAxis1.setLabelFont(new Font(FONT_NAME, Font.BOLD, 14));
+        yAxis1.setTickLabelFont(new Font(FONT_NAME, Font.PLAIN, 12));
 
         // 2nd Y-Axis
         final NumberAxis yAxis2 = new NumberAxis("Speed");
         yAxis2.setAutoRangeIncludesZero(false);
-        yAxis2.setLabelFont(new Font(fontName, Font.BOLD, 14));
-        yAxis2.setTickLabelFont(new Font(fontName, Font.PLAIN, 12));
+        yAxis2.setLabelFont(new Font(FONT_NAME, Font.BOLD, 14));
+        yAxis2.setTickLabelFont(new Font(FONT_NAME, Font.PLAIN, 12));
 
         // 3rd Y-Axis
         final NumberAxis yAxis3 = new NumberAxis("Third");
-        yAxis3.setLabelFont(new Font(fontName, Font.BOLD, 14));
-        yAxis3.setTickLabelFont(new Font(fontName, Font.PLAIN, 12));
+        yAxis3.setLabelFont(new Font(FONT_NAME, Font.BOLD, 14));
+        yAxis3.setTickLabelFont(new Font(FONT_NAME, Font.PLAIN, 12));
 
         plot = new XYPlot() {
-//            @Override
-//            public boolean isDomainZoomable() {
-//                return false;
-//            }
-//
-//            @Override
-//            public boolean isRangeZoomable() {
-//                return false;
-//            }
+            @Override
+            public boolean isDomainZoomable() {
+                return false;
+            }
+
+            @Override
+            public boolean isRangeZoomable() {
+                return false;
+            }
         };
         plot.setDomainAxis(xAxis);
         plot.setRangeAxis(yAxis1);
@@ -327,10 +335,10 @@ public class MainController implements Initializable {
         plot.mapDatasetToRangeAxis(1, 1);
 
         JFreeChart chart = new JFreeChart("SolarCar Test", JFreeChart.DEFAULT_TITLE_FONT, plot, true);
-        chart.getTitle().setFont(new Font(fontName, Font.BOLD, 18));
+        chart.getTitle().setFont(new Font(FONT_NAME, Font.BOLD, 18));
 
         // legend
-        chart.getLegend().setItemFont(new Font(fontName, Font.PLAIN, 14));
+        chart.getLegend().setItemFont(new Font(FONT_NAME, Font.PLAIN, 14));
         chart.getLegend().setFrame(BlockBorder.NONE);
 //        chart.getLegend().set
         chart.getLegend().setHorizontalAlignment(HorizontalAlignment.CENTER);
